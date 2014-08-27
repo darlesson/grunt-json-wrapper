@@ -1,0 +1,6 @@
+(function (App) {
+    'use strict';
+
+    App.CultureModel.create({ culture: '{filePrefix}', strings: {content}});
+
+})(App);
