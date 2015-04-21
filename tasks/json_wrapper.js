@@ -2,7 +2,7 @@
  * grunt-json-wrapper
  * https://github.com/darlesson/grunt-json-wrapper
  *
- * Copyright (c) 2014 Darlesson Oliveira
+ * Copyright (c) 2015 Darlesson Oliveira
  * Licensed under the MIT license.
  */
 
@@ -20,9 +20,10 @@ module.exports = function (grunt) {
         /**
          * Beautify and minify the JSON returning a string.
          *
+         * @method beautify
          * @param {Object} json The JSON object to be beautified.
          * @param {Boolean} minify Whether the result should be minified.
-         * @returns {String} The JSON stringfied result.
+         * @return {String} The JSON stringfied result.
          */
         beautify: function (json, minify) {
 
@@ -32,9 +33,7 @@ module.exports = function (grunt) {
                 suffix = minify ? '' : '\n';
 
             for (var prop in json) {
-
                 results += (prefix + '"' + prop + ('":' + spacing + '"') + json[prop].replace(/\"/g, '\\"') + '",');
-
             }
 
             results = ((results.substring(0, results.length - 1) || '{') + (suffix + '}'));
@@ -45,8 +44,9 @@ module.exports = function (grunt) {
         /**
          * Sort the JSON file alphabetically.
          *
+         * @method sort
          * @param {Object} json The parsed JSON object.
-         * @returns {Object} A new sorted JSON object.
+         * @return {Object} A new sorted JSON object.
          */
         sort: function (json) {
 
@@ -71,37 +71,98 @@ module.exports = function (grunt) {
                 }
 
                 return 0;
-
             });
 
             array.forEach(function (item) {
-
                 results[item.key] = item.value;
-
             });
 
             return results;
-
         },
 
         /**
          * Get the wrapper to be used. The wrapper from the file replaces the inline wrapper.
          *
-         * @param {String} wrapper The inline wrapper.
-         * @param {String} filePath The file wrapper path. It replaces the inline wrapper.
-         * @returns {String} The wrapping content.
+         * @method wrapper
+         * @param {Object} options The options.
+         * @return {String} The wrapping content.
          */
-        wrapper: function (wrapper, filePath) {
+        wrapper: function (options) {
 
-            var content = '';
+            var content = '',
+                wrapper = options.wrapper,
+                filePath = helpers.filePath(options);
 
-            if (filePath && typeof filePath === 'string' && grunt.file.exists(filePath)) {
+            if (filePath) {
                 content = grunt.file.read(filePath);
             } else {
                 content = wrapper;
             }
 
             return typeof content === 'string' ? content : '';
+        },
+
+        /**
+         * Gets the file path if the file exists.
+         *
+         * @method filePath
+         * @param {Object} options The options.
+         * @return {String} The file path it the file exists.
+         */
+        filePath: function (options) {
+
+            var wrapperFile = options.wrapperFile,
+                wrappersFolder = options.wrappersFolder;
+
+            if(wrapperFile && typeof wrapperFile === 'string') {
+
+                var hasExtension = (wrapperFile.lastIndexOf('/') < wrapperFile.lastIndexOf('.')) ? true : false;
+
+                // Normalize wrappersFolder
+                wrappersFolder = (wrappersFolder && typeof wrappersFolder === 'string') ? wrappersFolder : null;
+                wrappersFolder = (wrappersFolder && (wrappersFolder.lastIndexOf('/') + 1 === wrappersFolder.length) || !wrappersFolder) ? wrappersFolder : wrappersFolder + '/';
+
+                if (wrapperFile.indexOf('/') === -1 && wrappersFolder) {
+
+                    wrapperFile = wrappersFolder + wrapperFile;
+
+                    if (grunt.file.exists(wrapperFile)) {
+                        return wrapperFile;
+                    }
+                }
+
+                if (grunt.file.exists(wrapperFile)) {
+                    return wrapperFile;
+                } else if (!hasExtension) {
+
+                    wrapperFile += '.txt';
+
+                    if(grunt.file.exists(wrapperFile)) {
+                        return wrapperFile;
+                    }
+                }
+            }
+
+            return null;
+        },
+
+        /**
+         * Add properties from a JSON to another when properties
+         * don't exist.
+         *
+         * @method extend
+         */
+        extend: function (json, extendingJSON) {
+
+            var prop;
+
+            for(prop in extendingJSON) {
+
+                if (!json.hasOwnProperty(prop)) {
+                    json[prop] = extendingJSON[prop];
+                }
+            }
+
         }
     };
 
@@ -113,15 +174,19 @@ module.exports = function (grunt) {
         var options = this.options({
                 wrapper: '(function() { var json = {content}; })();',
                 wrapperFile: null,
+                wrappersFolder: 'wrappers',
+                extendWith: null,
                 sort: true,
                 raw: false,
                 minify: false
             }),
-            wrapper = options.wrapper || '';
+            wrapper = options.wrapper || '',
+            extendingJSON = null;
 
         this.files.forEach(function (file) {
 
-            var src = file.src.filter(function (filePath) {
+            var lastIndexOf = -1,
+                src = file.src.filter(function (filePath) {
 
                     if (!grunt.file.exists(filePath)) {
 
@@ -134,10 +199,13 @@ module.exports = function (grunt) {
                 })
                 .map(function (filePath) {
 
-                    var wrapper = helpers.wrapper(options.wrapper, options.wrapperFile),
-                        content = grunt.file.read(filePath),
-                        lastIndexOf = filePath.lastIndexOf('/'),
-                        fileName = filePath.substr(lastIndexOf > -1 ? lastIndexOf + 1 : 0);
+                    var wrapper = helpers.wrapper(options),
+                        extendingContent = options.extendWith ? grunt.file.read(options.extendWith) : null,
+                        content = grunt.file.read(filePath);
+
+                    lastIndexOf = filePath.lastIndexOf('/');
+
+                    var fileName = filePath.substr(lastIndexOf > -1 ? lastIndexOf + 1 : 0);
 
                     lastIndexOf = fileName.lastIndexOf('.');
 
@@ -152,6 +220,19 @@ module.exports = function (grunt) {
 
                                 var json = JSON.parse(content);
 
+                                if (extendingContent && filePath !== extendingContent) {
+
+                                    if (!extendingJSON) {
+                                        try {
+                                            extendingJSON = JSON.parse(extendingContent);
+                                        } catch (errorEvent) {
+                                            grunt.log.warn('There is an issue with the JSON format for extendWith option "' + options.extendWith + '".');
+                                        }
+                                    }
+
+                                    helpers.extend(json, extendingJSON);
+                                }
+
                                 // Sort the JSON content
                                 if (options.sort === true) {
                                     json = helpers.sort(json);
@@ -160,9 +241,7 @@ module.exports = function (grunt) {
                                 // Beautify the JSON content and minify if desired
                                 content = helpers.beautify(json, options.minify);
                             } catch (errorEvent) {
-
                                 grunt.log.warn('There is an issue with the JSON format for "' + filePath + '".');
-
                             }
                         }
 
@@ -178,17 +257,24 @@ module.exports = function (grunt) {
                     return content;
                 })
                 .filter(function (content) {
-
                     // Remove blank content
                     return content ? true : false;
-
                 })
                 .join('\r');
 
-            // Write the converted file to its destination
-            grunt.file.write(file.dest, src);
+            var dest = file.dest;
 
-            grunt.log.writeln('File "' + file.dest + '" created.');
+            if(file.orig.expand === true) {
+
+                lastIndexOf = dest.lastIndexOf('.');
+
+                dest = dest.substring(0, lastIndexOf ? lastIndexOf : dest.length) + '.js';
+            }
+
+            // Write the converted file to its destination
+            grunt.file.write(dest, src);
+
+            grunt.log.writeln('File "' + dest + '" created.');
         });
     });
 

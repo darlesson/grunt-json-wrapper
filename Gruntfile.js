@@ -1,9 +1,9 @@
 /*
  * grunt-json-wrapper
- * ?
+ * https://github.com/darlesson/grunt-json-wrapper
  *
- * Copyright (c) 2014 ?
- * Licensed under the ? license.
+ * Copyright (c) 2015 Darlesson Oliveira
+ * Licensed under the MIT license.
  */
 
 'use strict';
@@ -43,6 +43,7 @@ module.exports = function (grunt) {
                 options: {
                     wrapper: null,
                     wrapperFile: 'test/wrappers/emberApp.txt',
+                    extendWith: 'test/fixtures/en-US.json',
                     sort: true, // Default value
                     raw: false, // Default value
                     minify: false // Default value

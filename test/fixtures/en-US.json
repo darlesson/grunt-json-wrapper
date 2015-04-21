@@ -1,5 +1,7 @@
 {
     "firstName": "First Name",
     "lastName": "Last Name",
-    "fullName": "Full Name"
+    "fullName": "Full Name",
+    "language": "Language",
+    "country": "Country"
 }
