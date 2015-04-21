@@ -1,6 +1,6 @@
 {
     "name": "grunt-json-wrapper",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Wraps JSON files in custom wrappers generating a JS file for them.",
     "homepage": "http://darlesson.com",
     "repository": "https://github.com/darlesson/grunt-json-wrapper",
