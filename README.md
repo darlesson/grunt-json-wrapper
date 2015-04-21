@@ -49,6 +49,12 @@ Default value: `null`
 
 A string with a file path containing the wrapping template. The content of this file replaces the value from `options.wrapper`. Keep it empty if you prefer inline wrapper.
 
+### options.extendWith
+Type: `String`
+Default value: `null`
+
+A string with a file path containing the a JSON object. The properties from this JSON are used to fill up the files JSON's missing properties.
+
 #### options.sort
 Type: `Boolean`
 Default value: `true`
