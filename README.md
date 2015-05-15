@@ -118,9 +118,15 @@ grunt.initConfig({
             raw: false, // Default value
             minify: false // Default value
         },
-        files: {
-            'tmp/custom_options.js': ['test/fixtures/pt-BR.json', 'test/fixtures/en-US.json']
-        }
+        files: [{
+            expand: true,
+            flatten: true,
+            src: [
+                'test/fixtures/*.json'
+            ],
+            // Generate individual files under another folder
+            dest: 'text/dist'
+        }]
     }
 });
 ```
