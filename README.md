@@ -23,14 +23,35 @@ grunt.loadNpmTasks('grunt-json-wrapper');
 In your project's Gruntfile, add a section named `json_wrapper` to the data object passed into `grunt.initConfig()`.
 
 ```js
+// Try this for mixed files...
 grunt.initConfig({
     json_wrapper: {
         options: {
             // Task-specific options go here
         },
-        files: {
-            // Files list
+        mixed: {
+            files: {
+                // Files list
+            }
         }
+    }
+});
+
+// ... or this to generated individual files
+grunt.initConfig({
+    json_wrapper: {
+        options: {
+            // Task-specific options go here
+        },
+        files: [{
+            expand: true,
+            flatten: true,
+            src: [
+                // Files list
+            ],
+            // The folder where the generated files should go
+            dest: 'dist'
+        }]
     }
 });
 ```
@@ -98,8 +119,10 @@ wrapped separately but they will be together in the result file.
 grunt.initConfig({
     json_wrapper: {
         options: {},
-        files: {
-            'tmp/default_options.js': ['test/fixtures/pt-BR.json', 'test/fixtures/en-US.json']
+        mixed: {
+            files: {
+                'tmp/default_options.js': ['test/fixtures/pt-BR.json', 'test/fixtures/en-US.json']
+            }
         }
     }
 });
